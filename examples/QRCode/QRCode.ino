@@ -6,51 +6,54 @@
  *  This prints the QR code to the serial monitor as solid blocks. Each module
  *  is two characters wide, since the monospace font used in the serial monitor
  *  is approximately twice as tall as wide.
- *
  */
 
-#include "qrcode.h"
+#include <QRCode.h>
 
-void setup() {
-    Serial.begin(115200);
+constexpr uint32_t BAUD_RATE  = 115200;
+constexpr uint8_t QUIET_ZONE = 4;
 
-    // Start time
-    uint32_t dt = millis();
-  
-    // Create the QR code
-    QRCode qrcode;
-    uint8_t qrcodeData[qrcode_getBufferSize(3)];
-    qrcode_initText(&qrcode, qrcodeData, 3, 0, "HELLO WORLD");
-  
-    // Delta time
-    dt = millis() - dt;
+qrcode::QRCode<3> qr;
+
+void printQuietRows()
+{
+    for (uint8_t row = 0; row < QUIET_ZONE; row++)
+        Serial.print("\n");
+}
+
+void setup()
+{
+    Serial.begin(BAUD_RATE);
+
+    const uint32_t start = millis();
+    const bool encoded   = qr.encode("HELLO WORLD", qrcode::Ecc::L);
+    const uint32_t dt    = millis() - start;
+
+    if (!encoded)
+    {
+        Serial.print("Data does not fit a version 3 QR code at this ECC level\n");
+        return;
+    }
+
     Serial.print("QR Code Generation Time: ");
     Serial.print(dt);
     Serial.print("\n");
 
-    // Top quiet zone
-    Serial.print("\n\n\n\n");
+    printQuietRows();
+    for (uint8_t y = 0; y < qr.SIZE; y++)
+    {
+        for (uint8_t column = 0; column < QUIET_ZONE; column++)
+            Serial.print("  ");
 
-    for (uint8_t y = 0; y < qrcode.size; y++) {
-
-        // Left quiet zone
-        Serial.print("        ");
-
-        // Each horizontal module
-        for (uint8_t x = 0; x < qrcode.size; x++) {
-
-            // Print each module (UTF-8 \u2588 is a solid block)
-            Serial.print(qrcode_getModule(&qrcode, x, y) ? "\u2588\u2588": "  ");
-
-        }
+        // UTF-8 \u2588 is a solid block
+        for (uint8_t x = 0; x < qr.SIZE; x++)
+            Serial.print(qr.module(x, y) ? "\u2588\u2588" : "  ");
 
         Serial.print("\n");
     }
-
-    // Bottom quiet zone
-    Serial.print("\n\n\n\n");
+    printQuietRows();
 }
 
-void loop() {
-
+void loop()
+{
 }

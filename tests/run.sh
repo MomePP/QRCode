@@ -1,5 +1,9 @@
 #!/bin/bash
+set -euo pipefail
 
-clang++ run-tests.cpp QrCode.cpp QrSegment.cpp BitBuffer.cpp ../src/qrcode.c -o test && ./test
-clang++ run-tests.cpp QrCode.cpp QrSegment.cpp BitBuffer.cpp ../src/qrcode.c -o test -D LOCK_VERSION=3 && ./test
+cd "$(dirname "$0")"
 
+clang++ -std=c++20 -Wall -Wextra -Werror -O2 \
+    run-tests.cpp QrCode.cpp QrSegment.cpp BitBuffer.cpp ../src/QRCode.cpp \
+    -o test
+./test
